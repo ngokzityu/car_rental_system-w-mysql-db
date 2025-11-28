@@ -153,4 +153,4 @@ curl -X POST http://localhost:8080/api/auth/signin \
     *   A: 设置 `spring.jpa.hibernate.ddl-auto=create` 重启一次即可清空并重建表结构 (生产环境慎用)。
 
 ---
-**Enjoy your coding!** 🚗⚡️
+**Enjoy!** 🚗⚡️
