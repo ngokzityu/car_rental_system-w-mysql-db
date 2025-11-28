@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特斯拉租赁 | 车队管理系统</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <style>
+        :root {
+            --apple-bg: #f5f5f7;
+            --apple-card-bg: rgba(255, 255, 255, 0.8);
+            --apple-text-primary: #1d1d1f;
+            --apple-text-secondary: #86868b;
+            --apple-blue: #0071e3;
+            --apple-blue-hover: #0077ed;
+            --apple-border: #d2d2d7;
+            --apple-radius: 20px;
+            --apple-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            --apple-header-bg: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            background-color: var(--apple-bg);
+            color: var(--apple-text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px 30px;
+            background: var(--apple-header-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: var(--apple-radius);
+            box-shadow: var(--apple-shadow);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .logo-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--apple-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+            background: linear-gradient(135deg, #000, #333);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- Stats Cards --- */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--apple-card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: var(--apple-radius);
+            box-shadow: var(--apple-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card-title {
+            color: var(--apple-text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--apple-text-primary);
+            letter-spacing: -1px;
+        }
+
+        /* --- Element Plus Overrides (Apple Style) --- */
+
+        /* Tabs */
+        .el-tabs--border-card {
+            background: var(--apple-card-bg) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            border-radius: var(--apple-radius);
+            box-shadow: var(--apple-shadow) !important;
+            overflow: hidden;
+        }
+
+        .el-tabs--border-card>.el-tabs__header {
+            background: rgba(245, 245, 247, 0.3) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .el-tabs--border-card>.el-tabs__header .el-tabs__item {
+            color: var(--apple-text-secondary);
+            font-weight: 500;
+            border: none !important;
+            transition: all 0.3s ease;
+            margin: 0 4px;
+            border-radius: 8px;
+        }
+
+        .el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active {
+            color: var(--apple-blue) !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .el-tabs--border-card>.el-tabs__header .el-tabs__item:hover {
+            color: var(--apple-blue) !important;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Buttons */
+        .el-button {
+            border-radius: 980px !important;
+            font-weight: 500 !important;
+            padding: 10px 24px !important;
+            border: none !important;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        }
+
+        .el-button--primary {
+            background: linear-gradient(180deg, #0071e3 0%, #0077ed 100%) !important;
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+        }
+
+        .el-button--primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4);
+        }
+
+        .el-button--default {
+            background: rgba(255, 255, 255, 0.8) !important;
+            color: var(--apple-text-primary) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .el-button--default:hover {
+            background: #fff !important;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Table */
+        .el-table {
+            --el-table-header-bg-color: rgba(255, 255, 255, 0.5) !important;
+            --el-table-row-hover-bg-color: rgba(0, 113, 227, 0.05) !important;
+            --el-table-bg-color: transparent !important;
+            --el-table-tr-bg-color: transparent !important;
+            background-color: transparent !important;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: rgba(255, 255, 255, 0.5) !important;
+            color: var(--apple-text-secondary);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .el-table .cell {
+            color: var(--apple-text-primary);
+            font-size: 14px;
+        }
+
+        /* Tags */
+        .el-tag {
+            border-radius: 980px;
+            border: none !important;
+            font-weight: 600;
+            padding: 0 12px;
+        }
+
+        .el-tag--success {
+            background-color: rgba(52, 199, 89, 0.15) !important;
+            color: #34c759 !important;
+        }
+
+        .el-tag--warning {
+            background-color: rgba(255, 149, 0, 0.15) !important;
+            color: #ff9500 !important;
+        }
+
+        .el-tag--info {
+            background-color: rgba(142, 142, 147, 0.15) !important;
+            color: #8e8e93 !important;
+        }
+
+        /* Dialog */
+        .el-dialog {
+            border-radius: var(--apple-radius) !important;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .el-dialog__header {
+            margin-right: 0 !important;
+            text-align: center;
+            padding: 24px 0 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .el-dialog__title {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--apple-text-primary);
+        }
+
+        .el-dialog__footer {
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 20px 24px 24px;
+        }
+
+        /* Inputs */
+        .el-input__wrapper {
+            border-radius: 12px !important;
+            box-shadow: 0 0 0 1px #d2d2d7 inset !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            transition: all 0.2s ease;
+            padding: 4px 12px !important;
+        }
+
+        .el-input__wrapper:hover {
+            background-color: #fff !important;
+        }
+
+        .el-input__wrapper.is-focus {
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2) inset, 0 0 0 1px var(--apple-blue) inset !important;
+            background-color: #fff !important;
+        }
+
+        .el-form-item__label {
+            color: var(--apple-text-secondary) !important;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <div class="header">
+            <div class="logo-title">
+                <span class="logo-icon"></span>
+                特斯拉车队管理
+            </div>
+            <div>
+                <el-button type="default" @click="currentTab = 'vehicles'">
+                    仪表盘
+                </el-button>
+            </div>
+        </div>
+
+        <div class="stats-container" v-if="currentTab === 'vehicles'">
+            <div class="stat-card">
+                <div class="stat-card-title">可用车辆</div>
+                <div class="stat-card-value">{{ vehicleStats.available }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-title">已租车辆</div>
+                <div class="stat-card-value">{{ vehicleStats.rented }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-title">车队总数</div>
+                <div class="stat-card-value">{{ vehicleStats.total }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-title">系统状态</div>
+                <div class="stat-card-value" style="color: #34c759; font-size: 20px;">运行中</div>
+            </div>
+        </div>
+
+        <el-tabs v-model="currentTab" type="border-card">
+            <el-tab-pane label="车辆列表" name="vehicles">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openVehicleDialog">添加车辆</el-button>
+                    <el-button type="success" @click="generateVehicles">生成10辆随机车</el-button>
+                    <el-button @click="refreshVehicles">刷新</el-button>
+                </div>
+                <el-table :data="vehicleList" style="width: 100%" v-loading="loading.vehicles">
+                    <el-table-column prop="vehicleId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="carModelName" label="车型"></el-table-column>
+                    <el-table-column prop="plateNo" label="车牌号"></el-table-column>
+                    <el-table-column prop="currentSoc" label="电量(%)"></el-table-column>
+                    <el-table-column prop="currentMileage" label="里程(km)"></el-table-column>
+                    <el-table-column prop="status" label="状态" align="center">
+                        <template #default="scope">
+                            <el-tag
+                                :type="scope.row.status === '在库' ? 'success' : scope.row.status === '在租' ? 'warning' : 'info'"
+                                effect="dark" round>
+                                ● {{ scope.row.status }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center" width="180">
+                        <template #default="scope">
+                            <el-button link type="primary" size="small"
+                                @click="openEditStatusDialog(scope.row)">修改状态</el-button>
+                            <el-button link type="danger" size="small"
+                                @click="deleteVehicle(scope.row.vehicleId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="客户列表" name="customers">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openCustomerDialog">添加客户</el-button>
+                    <el-button @click="refreshCustomers">刷新</el-button>
+                </div>
+                <el-table :data="customerList" style="width: 100%" v-loading="loading.customers">
+                    <el-table-column prop="customerId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="name" label="姓名"></el-table-column>
+                    <el-table-column prop="phone" label="电话"></el-table-column>
+                    <el-table-column prop="idCard" label="身份证号"></el-table-column>
+                    <el-table-column prop="driverLicense" label="驾照号"></el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deleteCustomer(scope.row.customerId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="订单管理" name="orders">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openOrderDialog">新建订单</el-button>
+                    <el-button @click="refreshOrders">刷新</el-button>
+                </div>
+                <el-table :data="orderList" style="width: 100%" v-loading="loading.orders">
+                    <el-table-column prop="orderId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="customerId" label="客户 ID" width="80"></el-table-column>
+                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
+                    <el-table-column prop="rentStart" label="起租时间" width="160"></el-table-column>
+                    <el-table-column prop="rentEnd" label="还车时间" width="160"></el-table-column>
+                    <el-table-column prop="pickupSoc" label="取车电量(%)"></el-table-column>
+                    <el-table-column prop="returnSoc" label="还车电量(%)"></el-table-column>
+                    <el-table-column prop="status" label="状态" align="center" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'">
+                                {{ scope.row.status }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deleteOrder(scope.row.orderId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="支付记录" name="payments">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openPaymentDialog">新增支付</el-button>
+                    <el-button @click="refreshPayments">刷新</el-button>
+                </div>
+                <el-table :data="paymentList" style="width: 100%" v-loading="loading.payments">
+                    <el-table-column prop="payId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="orderId" label="订单 ID" width="80"></el-table-column>
+                    <el-table-column prop="amount" label="金额">
+                        <template #default="scope">¥ {{ scope.row.amount }}</template>
+                    </el-table-column>
+                    <el-table-column prop="type" label="类型"></el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deletePayment(scope.row.payId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="门店管理" name="stores">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openStoreDialog">添加门店</el-button>
+                    <el-button @click="refreshStores">刷新</el-button>
+                </div>
+                <el-table :data="storeList" style="width: 100%" v-loading="loading.stores">
+                    <el-table-column prop="storeId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="name" label="名称"></el-table-column>
+                    <el-table-column prop="address" label="地址"></el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deleteStore(scope.row.storeId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="违章记录" name="violations">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openViolationDialog">登记违章</el-button>
+                    <el-button @click="refreshViolations">刷新</el-button>
+                </div>
+                <el-table :data="violationList" style="width: 100%" v-loading="loading.violations">
+                    <el-table-column prop="vioId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
+                    <el-table-column prop="orderId" label="订单 ID" width="80"></el-table-column>
+                    <el-table-column prop="location" label="违章位置"></el-table-column>
+                    <el-table-column prop="fineAmount" label="罚款金额">
+                        <template #default="scope">¥ {{ scope.row.fineAmount }}</template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deleteViolation(scope.row.vioId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="维护保养" name="maintenance">
+                <div class="action-buttons">
+                    <el-button type="primary" @click="openMaintenanceDialog">登记维护</el-button>
+                    <el-button @click="refreshMaintenance">刷新</el-button>
+                </div>
+                <el-table :data="maintenanceList" style="width: 100%" v-loading="loading.maintenance">
+                    <el-table-column prop="maintId" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
+                    <el-table-column prop="type" label="类型"></el-table-column>
+                    <el-table-column prop="maintDate" label="维护日期"></el-table-column>
+                    <el-table-column prop="description" label="描述"></el-table-column>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                            <el-button link type="danger" size="small"
+                                @click="deleteMaintenance(scope.row.maintId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+        </el-tabs>
+
+        <el-dialog v-model="dialogVisible.vehicle" title="新增车辆" width="500px">
+            <el-form :model="form.vehicle" label-position="top">
+                <el-form-item label="车型">
+                    <el-select v-model="form.vehicle.modelId" placeholder="请选择车型" style="width: 100%">
+                        <el-option v-for="model in carModels" :key="model.modelId" :label="model.name"
+                            :value="model.modelId"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="车牌号">
+                    <el-input v-model="form.vehicle.plateNo" placeholder="例如：京A 88888"></el-input>
+                </el-form-item>
+                <el-form-item label="当前电量(%)">
+                    <el-input-number v-model="form.vehicle.currentSoc" :min="0" :max="100" :step="5"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="当前里程(km)">
+                    <el-input-number v-model="form.vehicle.currentMileage" :min="0" :step="10"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-select v-model="form.vehicle.status" style="width: 100%">
+                        <el-option label="在库" value="在库"></el-option>
+                        <el-option label="在租" value="在租"></el-option>
+                        <el-option label="维保" value="维保"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.vehicle = false">取消</el-button>
+                <el-button type="primary" @click="submitVehicle" :loading="submitting.vehicle">保存车辆</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.customer" title="新增客户" width="500px">
+            <el-form :model="form.customer" label-position="top">
+                <el-form-item label="姓名">
+                    <el-input v-model="form.customer.name" placeholder="张三"></el-input>
+                </el-form-item>
+                <el-form-item label="电话号码">
+                    <el-input v-model="form.customer.phone" placeholder="138 0000 0000"></el-input>
+                </el-form-item>
+                <el-form-item label="身份证号">
+                    <el-input v-model="form.customer.idCard" placeholder="身份证件号码"></el-input>
+                </el-form-item>
+                <el-form-item label="驾照号">
+                    <el-input v-model="form.customer.driverLicense" placeholder="驾照号码"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.customer = false">取消</el-button>
+                <el-button type="primary" @click="submitCustomer" :loading="submitting.customer">保存客户</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.order" title="创建订单" width="500px">
+            <el-form :model="form.order" label-position="top">
+                <el-form-item label="客户 ID">
+                    <el-input-number v-model="form.order.customerId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="车辆 ID">
+                    <el-input-number v-model="form.order.vehicleId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="起租时间">
+                    <el-input v-model="form.order.rentStart" type="datetime-local"></el-input>
+                </el-form-item>
+                <el-form-item label="还车时间">
+                    <el-input v-model="form.order.rentEnd" type="datetime-local"></el-input>
+                </el-form-item>
+                <el-form-item label="取车门店 ID">
+                    <el-input-number v-model="form.order.pickupStoreId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="还车门店 ID">
+                    <el-input-number v-model="form.order.returnStoreId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="订单总额">
+                    <el-input-number v-model="form.order.totalAmount" :min="0" :step="100"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.order = false">取消</el-button>
+                <el-button type="primary" @click="submitOrder" :loading="submitting.order">提交订单</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.payment" title="处理支付" width="500px">
+            <el-form :model="form.payment" label-position="top">
+                <el-form-item label="订单 ID">
+                    <el-input-number v-model="form.payment.orderId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="金额">
+                    <el-input-number v-model="form.payment.amount" :min="0" :step="100"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="类型">
+                    <el-select v-model="form.payment.type" style="width: 100%">
+                        <el-option label="押金" value="押金"></el-option>
+                        <el-option label="租金" value="租金"></el-option>
+                        <el-option label="赔偿" value="赔偿"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.payment = false">取消</el-button>
+                <el-button type="primary" @click="submitPayment" :loading="submitting.payment">提交支付</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.store" title="添加门店位置" width="500px">
+            <el-form :model="form.store" label-position="top">
+                <el-form-item label="门店名称">
+                    <el-input v-model="form.store.name" placeholder="例如：市中心分店"></el-input>
+                </el-form-item>
+                <el-form-item label="地址">
+                    <el-input v-model="form.store.address" placeholder="例如：xx路xx号"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.store = false">取消</el-button>
+                <el-button type="primary" @click="submitStore" :loading="submitting.store">保存门店</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.violation" title="登记违章" width="500px">
+            <el-form :model="form.violation" label-position="top">
+                <el-form-item label="车辆 ID">
+                    <el-input-number v-model="form.violation.vehicleId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="订单 ID">
+                    <el-input-number v-model="form.violation.orderId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="违章位置">
+                    <el-input v-model="form.violation.location" placeholder="违章发生位置"></el-input>
+                </el-form-item>
+                <el-form-item label="罚款金额">
+                    <el-input-number v-model="form.violation.fineAmount" :min="0" :step="50"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.violation = false">取消</el-button>
+                <el-button type="primary" @click="submitViolation" :loading="submitting.violation">保存记录</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="dialogVisible.maintenance" title="登记维护" width="500px">
+            <el-form :model="form.maintenance" label-position="top">
+                <el-form-item label="车辆 ID">
+                    <el-input-number v-model="form.maintenance.vehicleId" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="维保类型">
+                    <el-input v-model="form.maintenance.type" placeholder="常规保养、维修等"></el-input>
+                </el-form-item>
+                <el-form-item label="维保日期">
+                    <el-input v-model="form.maintenance.maintDate" type="date"></el-input>
+                </el-form-item>
+                <el-form-item label="描述">
+                    <el-input v-model="form.maintenance.description" type="textarea" placeholder="具体维护内容"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.maintenance = false">取消</el-button>
+                <el-button type="primary" @click="submitMaintenance" :loading="submitting.maintenance">保存记录</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 修改状态对话框 -->
+        <el-dialog v-model="dialogVisible.editStatus" title="修改车辆状态" width="400px">
+            <el-form :model="form.editStatus" label-position="top">
+                <el-form-item label="车辆ID">
+                    <el-input v-model="form.editStatus.vehicleId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-select v-model="form.editStatus.status" style="width: 100%">
+                        <el-option label="在库" value="在库"></el-option>
+                        <el-option label="在租" value="在租"></el-option>
+                        <el-option label="维保" value="维保"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.editStatus = false">取消</el-button>
+                <el-button type="primary" @click="submitStatusChange" :loading="submitting.editStatus">保存</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+        const app = createApp({
+            setup() {
+                const currentTab = ref('vehicles');
+
+                const loading = reactive({
+                    vehicles: false,
+                    customers: false,
+                    orders: false,
+                    payments: false,
+                    stores: false,
+                    violations: false,
+                    maintenance: false
+                });
+
+                // 模拟数据
+                const vehicleList = ref([
+                    { id: 1, model: 'Model 3', plateNo: '京A 88888', dailyPrice: 150, status: 1 },
+                    { id: 2, model: 'Model Y', plateNo: '沪B 66666', dailyPrice: 180, status: 0 },
+                    { id: 3, model: 'Model S', plateNo: '粤Z 99999', dailyPrice: 250, status: 1 }
+                ]);
+                const customerList = ref([]);
+                const orderList = ref([]);
+                const paymentList = ref([]);
+                const storeList = ref([]);
+                const violationList = ref([]);
+                const maintenanceList = ref([]);
+                const carModels = ref([]);
+
+                const vehicleStats = computed(() => ({
+                    available: vehicleList.value.filter(v => v.status === '在库').length,
+                    rented: vehicleList.value.filter(v => v.status === '在租').length,
+                    total: vehicleList.value.length
+                }));
+
+                const dialogVisible = reactive({
+                    vehicle: false,
+                    customer: false,
+                    order: false,
+                    payment: false,
+                    store: false,
+                    violation: false,
+                    maintenance: false,
+                    editStatus: false
+                });
+
+                const submitting = reactive({
+                    vehicle: false,
+                    customer: false,
+                    order: false,
+                    payment: false,
+                    store: false,
+                    violation: false,
+                    maintenance: false,
+                    editStatus: false
+                });
+
+                const form = reactive({
+                    vehicle: { plateNo: '', currentSoc: 100, currentMileage: 0, status: '在库', modelId: null, storeId: null },
+                    customer: { name: '', phone: '', idCard: '', driverLicense: '' },
+                    order: { customerId: null, vehicleId: null, rentStart: '', rentEnd: '', pickupStoreId: null, returnStoreId: null, totalAmount: 0, status: 'active', pickupSoc: 100, returnSoc: 100 },
+                    payment: { orderId: null, amount: 0, type: '押金' },
+                    store: { name: '', address: '' },
+                    violation: { vehicleId: null, orderId: null, location: '', fineAmount: 0 },
+                    maintenance: { vehicleId: null, type: '', maintDate: '', description: '' },
+                    editStatus: { vehicleId: null, status: '在库' }
+                });
+
+                const baseUrl = 'http://localhost:8080/api';
+
+                // --- 车辆管理 ---
+                const refreshVehicles = async () => {
+                    loading.vehicles = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/vehicles`);
+                        vehicleList.value = response.data || [];
+                    } catch (error) {
+                        console.log("后台未连接，使用模拟数据");
+                    } finally {
+                        loading.vehicles = false;
+                    }
+                };
+
+                const fetchCarModels = async () => {
+                    try {
+                        const response = await axios.get(`${baseUrl}/models`);
+                        carModels.value = response.data || [];
+                    } catch (error) {
+                        console.log("无法获取车型数据");
+                    }
+                };
+
+                const openVehicleDialog = () => {
+                    form.vehicle = { plateNo: '', currentSoc: 100, currentMileage: 0, status: '在库', modelId: null, storeId: null };
+                    if (carModels.value.length === 0) {
+                        fetchCarModels();
+                    }
+                    dialogVisible.vehicle = true;
+                };
+
+                const submitVehicle = async () => {
+                    if (!form.vehicle.plateNo || !form.vehicle.modelId) {
+                        ElementPlus.ElMessage.warning('请填写所有字段');
+                        return;
+                    }
+                    submitting.vehicle = true;
+                    try {
+                        await axios.post(`${baseUrl}/vehicles`, form.vehicle);
+                        ElementPlus.ElMessage.success('车辆已添加');
+                        dialogVisible.vehicle = false;
+                        refreshVehicles();
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('添加车辆失败');
+                    } finally {
+                        submitting.vehicle = false;
+                    }
+                };
+
+                const generateVehicles = async () => {
+                    try {
+                        await axios.post(`${baseUrl}/vehicles/generate?count=10`);
+                        ElementPlus.ElMessage.success('成功生成10辆随机车辆');
+                        refreshVehicles();
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('生成车辆失败');
+                    }
+                };
+
+                const deleteVehicle = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该车辆吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/vehicles/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshVehicles();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // 打开修改状态对话框
+                const openEditStatusDialog = (vehicle) => {
+                    form.editStatus.vehicleId = vehicle.vehicleId;
+                    form.editStatus.status = vehicle.status;
+                    dialogVisible.editStatus = true;
+                };
+
+                // 提交状态修改
+                const submitStatusChange = async () => {
+                    submitting.editStatus = true;
+                    try {
+                        const vehicleId = form.editStatus.vehicleId;
+                        const updatedVehicle = vehicleList.value.find(v => v.vehicleId === vehicleId);
+                        if (updatedVehicle) {
+                            updatedVehicle.status = form.editStatus.status;
+                            await axios.put(`${baseUrl}/vehicles/${vehicleId}`, updatedVehicle);
+                            ElementPlus.ElMessage.success('状态修改成功');
+                            dialogVisible.editStatus = false;
+                            refreshVehicles();
+                        }
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('修改失败');
+                    } finally {
+                        submitting.editStatus = false;
+                    }
+                };
+
+                // --- 客户管理 ---
+                const refreshCustomers = async () => {
+                    loading.customers = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/customers`);
+                        customerList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.customers = false;
+                    }
+                };
+
+                const openCustomerDialog = () => {
+                    form.customer = { name: '', phone: '', idCard: '' };
+                    dialogVisible.customer = true;
+                };
+
+                const submitCustomer = async () => {
+                    submitting.customer = true;
+                    try {
+                        await axios.post(`${baseUrl}/customers`, form.customer);
+                        dialogVisible.customer = false;
+                        refreshCustomers();
+                    } catch (error) { } finally {
+                        submitting.customer = false;
+                    }
+                };
+
+                const deleteCustomer = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该客户吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/customers/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshCustomers();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // --- 订单管理 ---
+                const refreshOrders = async () => {
+                    loading.orders = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/orders`);
+                        orderList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.orders = false;
+                    }
+                };
+
+                const openOrderDialog = () => {
+                    form.order = { customerId: null, vehicleId: null, rentStart: '', rentEnd: '', pickupStoreId: null, returnStoreId: null, totalAmount: 0, status: 'active', pickupSoc: 100, returnSoc: 100 };
+                    dialogVisible.order = true;
+                };
+
+                const submitOrder = async () => {
+                    submitting.order = true;
+                    try {
+                        await axios.post(`${baseUrl}/orders`, form.order);
+                        dialogVisible.order = false;
+                        refreshOrders();
+                    } catch (error) { } finally {
+                        submitting.order = false;
+                    }
+                };
+
+                const deleteOrder = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该订单吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/orders/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshOrders();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // --- 支付管理 ---
+                const refreshPayments = async () => {
+                    loading.payments = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/payments`);
+                        paymentList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.payments = false;
+                    }
+                };
+
+                const openPaymentDialog = () => {
+                    form.payment = { orderId: null, amount: 0, type: '押金' };
+                    dialogVisible.payment = true;
+                };
+
+                const submitPayment = async () => {
+                    submitting.payment = true;
+                    try {
+                        await axios.post(`${baseUrl}/payments`, form.payment);
+                        dialogVisible.payment = false;
+                        refreshPayments();
+                    } catch (error) { } finally {
+                        submitting.payment = false;
+                    }
+                };
+
+                const deletePayment = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该支付记录吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/payments/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshPayments();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // --- 门店管理 ---
+                const refreshStores = async () => {
+                    loading.stores = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/stores`);
+                        storeList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.stores = false;
+                    }
+                };
+
+                const openStoreDialog = () => {
+                    form.store = { name: '', address: '' };
+                    dialogVisible.store = true;
+                };
+
+                const submitStore = async () => {
+                    submitting.store = true;
+                    try {
+                        await axios.post(`${baseUrl}/stores`, form.store);
+                        dialogVisible.store = false;
+                        refreshStores();
+                    } catch (error) { } finally {
+                        submitting.store = false;
+                    }
+                };
+
+                const deleteStore = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该门店吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/stores/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshStores();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // --- 违章管理 ---
+                const refreshViolations = async () => {
+                    loading.violations = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/violations`);
+                        violationList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.violations = false;
+                    }
+                };
+
+                const openViolationDialog = () => {
+                    form.violation = { vehicleId: null, orderId: null, location: '', fineAmount: 0 };
+                    dialogVisible.violation = true;
+                };
+
+                const submitViolation = async () => {
+                    submitting.violation = true;
+                    try {
+                        await axios.post(`${baseUrl}/violations`, form.violation);
+                        dialogVisible.violation = false;
+                        refreshViolations();
+                    } catch (error) { } finally {
+                        submitting.violation = false;
+                    }
+                };
+
+                const deleteViolation = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该违章记录吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/violations/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshViolations();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                // --- 维护管理 ---
+                const refreshMaintenance = async () => {
+                    loading.maintenance = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/maintenance`);
+                        maintenanceList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.maintenance = false;
+                    }
+                };
+
+                const openMaintenanceDialog = () => {
+                    form.maintenance = { vehicleId: null, type: '', maintDate: '', description: '' };
+                    dialogVisible.maintenance = true;
+                };
+
+                const submitMaintenance = async () => {
+                    submitting.maintenance = true;
+                    try {
+                        await axios.post(`${baseUrl}/maintenance`, form.maintenance);
+                        dialogVisible.maintenance = false;
+                        refreshMaintenance();
+                    } catch (error) { } finally {
+                        submitting.maintenance = false;
+                    }
+                };
+
+                const deleteMaintenance = async (id) => {
+                    ElementPlus.ElMessageBox.confirm('确定删除该维护保养记录吗？', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        try {
+                            await axios.delete(`${baseUrl}/maintenance/${id}`);
+                            ElementPlus.ElMessage.success('删除成功');
+                            refreshMaintenance();
+                        } catch (error) {
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    }).catch(() => {
+                        ElementPlus.ElMessage.info('已取消删除');
+                    });
+                };
+
+                onMounted(() => {
+                    refreshVehicles();
+                });
+
+                return {
+                    carModels,
+                    fetchCarModels,
+                    currentTab,
+                    loading,
+                    vehicleList,
+                    customerList,
+                    orderList,
+                    paymentList,
+                    storeList,
+                    violationList,
+                    maintenanceList,
+                    vehicleStats,
+                    dialogVisible,
+                    submitting,
+                    form,
+                    refreshVehicles,
+                    openVehicleDialog,
+                    submitVehicle,
+                    generateVehicles,
+                    deleteVehicle,
+                    refreshCustomers,
+                    openCustomerDialog,
+                    submitCustomer,
+                    deleteCustomer,
+                    refreshOrders,
+                    openOrderDialog,
+                    submitOrder,
+                    deleteOrder,
+                    refreshPayments,
+                    openPaymentDialog,
+                    submitPayment,
+                    deletePayment,
+                    refreshStores,
+                    openStoreDialog,
+                    submitStore,
+                    deleteStore,
+                    refreshViolations,
+                    openViolationDialog,
+                    submitViolation,
+                    deleteViolation,
+                    refreshMaintenance,
+                    openMaintenanceDialog,
+                    submitMaintenance,
+                    deleteMaintenance,
+                    openEditStatusDialog,
+                    submitStatusChange
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+
+</html>s
