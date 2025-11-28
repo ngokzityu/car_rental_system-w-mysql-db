@@ -427,11 +427,14 @@
 
             <!-- 车型分类菜单 -->
             <div class="model-menu">
-                <button class="model-btn" :class="{ active: selectedModel === null }" @click="selectedModel = null">
+                <button class="model-btn" :class="{ active: currentFilter === 'ALL' }" @click="currentFilter = 'ALL'">
                     全部车型
                 </button>
-                <button class="model-btn" :class="{ active: selectedModel === model }" v-for="model in availableModels"
-                    :key="model" @click="selectedModel = model">
+                <button v-if="aiRecommendedModels.length > 0" class="model-btn" :class="{ active: currentFilter === 'AI' }" @click="currentFilter = 'AI'">
+                    AI 推荐
+                </button>
+                <button class="model-btn" :class="{ active: currentFilter === model }" v-for="model in availableModels"
+                    :key="model" @click="currentFilter = model">
                     {{ model }}
                 </button>
             </div>
@@ -537,10 +540,14 @@
                 const loading = ref(false);
                 const submitting = ref(false);
                 const vehicles = ref([]);
-                const selectedModel = ref(null);
+                // const selectedModel = ref(null); // Replaced by currentFilter
+                const currentFilter = ref('ALL'); // 'ALL', 'AI', or specific model name
+                const aiRecommendedModels = ref([]);
+
                 const dialogVisible = ref(false);
                 const selectedVehicle = ref(null);
                 const dateRange = ref([]);
+                const stores = ref([]);
 
                 // Chat State
                 const chatVisible = ref(false);
@@ -593,27 +600,12 @@
 
                         // 自动筛选逻辑
                         if (data.recommendedModels && data.recommendedModels.length > 0) {
-                            // 如果有多个推荐，暂时只选中第一个，或者修改逻辑支持多选
-                            // 这里为了简单，我们将 selectedModel 设置为 null (显示全部)，但给用户提示
-                            // 或者我们可以修改 filteredVehicles 逻辑来支持多选。
-                            // 让我们增强一下 filteredVehicles 的逻辑：
-                            // 如果 chatRecommendedModels 不为空，则只显示这些。
+                            aiRecommendedModels.value = data.recommendedModels;
+                            currentFilter.value = 'AI';
                             
-                            // 简单起见，如果只推荐了一个，就选中它
-                            if (data.recommendedModels.length === 1) {
-                                selectedModel.value = data.recommendedModels[0];
-                                ElementPlus.ElMessage.success(`已为您筛选: ${selectedModel.value}`);
-                            } else {
-                                // 如果推荐了多个，我们在前端做一个特殊的过滤状态
-                                // 这里为了不破坏现有逻辑太大，我们暂且只提示用户，并重置筛选
-                                // 或者我们可以动态把 selectedModel 变成 "推荐车型" 状态
-                                // 让我们做得更好一点：直接让 filteredVehicles 支持数组过滤
-                                
-                                // 临时方案：只提示用户，因为现有 selectedModel 是单选
-                                const modelsStr = data.recommendedModels.join(', ');
-                                ElementPlus.ElMessage.success(`为您推荐: ${modelsStr}，请在上方菜单选择。`);
-                            }
-                            
+                            const modelsStr = data.recommendedModels.join(', ');
+                            ElementPlus.ElMessage.success(`已为您切换至 "AI 推荐"：${modelsStr}`);
+
                             // 滚动到车辆列表
                             document.querySelector('.vehicle-grid').scrollIntoView({ behavior: 'smooth' });
                         }
@@ -649,6 +641,15 @@
                     }
                 };
 
+                const fetchStores = async () => {
+                    try {
+                        const response = await axios.get(`${baseUrl}/stores`);
+                        stores.value = response.data || [];
+                    } catch (error) {
+                        console.error("获取门店失败", error);
+                    }
+                };
+
                 // 提取车型（从carModelName字段中）
                 const availableModels = computed(() => {
                     const models = new Set();
@@ -660,12 +661,18 @@
                     return Array.from(models).sort();
                 });
 
-                // 过滤车辆：先过滤在库状态，再按选中的车型过滤
+                // 过滤车辆：先过滤在库状态，再按 currentFilter 过滤
                 const filteredVehicles = computed(() => {
                     let result = vehicles.value.filter(v => v.status === '在库');
 
-                    if (selectedModel.value) {
-                        result = result.filter(v => v.carModelName === selectedModel.value);
+                    if (currentFilter.value === 'ALL') {
+                        // Do nothing, show all
+                    } else if (currentFilter.value === 'AI') {
+                         // 过滤出在推荐列表中的车型
+                         result = result.filter(v => aiRecommendedModels.value.includes(v.carModelName));
+                    } else {
+                        // 具体车型
+                        result = result.filter(v => v.carModelName === currentFilter.value);
                     }
 
                     return result;
@@ -726,8 +733,11 @@
                             rentEnd: formatDateTime(dateRange.value[1]),
                             pickupSoc: 100,
                             returnSoc: 100,
-                            pickupStoreId: 1,
-                            returnStoreId: 1,
+                            pickupSoc: 100,
+                            returnSoc: 100,
+                            pickupStoreId: stores.value.length > 0 ? stores.value[0].storeId : 1,
+                            returnStoreId: stores.value.length > 0 ? stores.value[0].storeId : 1,
+                            totalAmount: 0,
                             totalAmount: 0,
                             status: '已支付'
                         });
@@ -767,13 +777,16 @@
 
                 onMounted(() => {
                     fetchVehicles();
+                    fetchStores();
                 });
 
                 return {
                     loading,
                     submitting,
                     vehicles,
-                    selectedModel,
+                    // selectedModel, // Removed
+                    currentFilter, // Added
+                    aiRecommendedModels, // Added
                     availableModels,
                     filteredVehicles,
                     dialogVisible,

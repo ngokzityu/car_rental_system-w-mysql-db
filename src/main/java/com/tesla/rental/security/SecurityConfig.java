@@ -54,7 +54,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/index.html", "/customer.html", "/images/**", "/js/**", "/css/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/vehicles/**", "/api/models/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/vehicles/**", "/api/models/**", "/api/stores/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/vehicles/generate").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/customers/**", "/api/orders/**").permitAll()
                         .anyRequest().authenticated()
                 );
 

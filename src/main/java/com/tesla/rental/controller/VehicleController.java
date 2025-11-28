@@ -50,10 +50,27 @@ public class VehicleController {
     @Autowired
     private com.tesla.rental.repository.CarModelRepository carModelRepository;
 
+    @Autowired
+    private com.tesla.rental.repository.BrandRepository brandRepository;
+
+    @Autowired
+    private com.tesla.rental.repository.StoreRepository storeRepository;
+
     // 6. 批量生成随机车辆（用于测试）
     @PostMapping("/generate")
     public List<Vehicle> generateVehicles(@RequestParam(defaultValue = "10") int count) {
-        // 确保已存在车型数据
+        // 0. 确保已存在品牌数据
+        Long brandId;
+        if (brandRepository.count() == 0) {
+            com.tesla.rental.entity.Brand brand = new com.tesla.rental.entity.Brand();
+            brand.setName("Tesla");
+            brand = brandRepository.save(brand);
+            brandId = brand.getBrandId();
+        } else {
+            brandId = brandRepository.findAll().get(0).getBrandId();
+        }
+
+        // 1. 确保已存在车型数据
         if (carModelRepository.count() == 0) {
             String[] modelNames = { "Model 3", "Model Y", "Model S", "Model X", "Cybertruck" };
             for (String name : modelNames) {
@@ -61,11 +78,20 @@ public class VehicleController {
                 m.setName(name);
                 m.setSeatCount(5); // 默认值
                 m.setBatteryCapacity(75.0); // 默认值
-                m.setBrandId(1L); // 特斯拉
+                m.setBrandId(brandId); // 使用实际的 Brand ID
                 carModelRepository.save(m);
             }
         }
         List<com.tesla.rental.entity.CarModel> models = carModelRepository.findAll();
+
+        // 2. 确保已存在门店数据
+        if (storeRepository.count() == 0) {
+            com.tesla.rental.entity.Store s = new com.tesla.rental.entity.Store();
+            s.setName("Tesla Center Shanghai");
+            s.setAddress("Shanghai, China");
+            storeRepository.save(s);
+        }
+        List<com.tesla.rental.entity.Store> stores = storeRepository.findAll();
 
         List<Vehicle> vehicles = new java.util.ArrayList<>();
         java.util.Random random = new java.util.Random();
@@ -93,13 +119,17 @@ public class VehicleController {
             // 从已有车型中随机选择
             if (!models.isEmpty()) {
                 v.setModelId(models.get(random.nextInt(models.size())).getModelId());
-            } else {
-                v.setModelId(1L); // 兜底值
             }
 
-            v.setStoreId((long) (random.nextInt(5) + 1));
+            // 从已有门店中随机选择
+            if (!stores.isEmpty()) {
+                v.setStoreId(stores.get(random.nextInt(stores.size())).getStoreId());
+            }
 
-            vehicles.add(v);
+            // 只有在有有效 ModelId 和 StoreId 时才添加，避免外键错误（虽然上面逻辑保证了会有数据）
+            if (v.getModelId() != null && v.getStoreId() != null) {
+                vehicles.add(v);
+            }
         }
         return vehicleRepository.saveAll(vehicles);
     }
