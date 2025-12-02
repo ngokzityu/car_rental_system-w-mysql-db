@@ -515,7 +515,7 @@
                         :class="msg.role === 'user' ? 'user' : 'ai'">
                         {{ msg.content }}
                     </div>
-                    <div v-if="chatLoading" class="message ai">正在思考...</div>
+                    <div v-if="chatLoading" class="message ai">正在回复...</div>
                 </div>
                 <div class="chat-input-area">
                     <input type="text" class="chat-input" v-model="chatInput" @keyup.enter="sendMessage"

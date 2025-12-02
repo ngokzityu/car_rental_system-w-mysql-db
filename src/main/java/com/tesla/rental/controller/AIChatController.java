@@ -41,7 +41,7 @@ public class AIChatController {
     public ChatResponse chat(@RequestBody ChatRequest request) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
             // Fallback if API key is missing
-            return new ChatResponse("请先在后台配置 Moonshot API Key。", new ArrayList<>());
+            return new ChatResponse("请先在后台配置 DeepSeek API Key。", new ArrayList<>());
         }
 
         try {
@@ -90,7 +90,7 @@ public class AIChatController {
 
             // 2. 构建 OpenAI 格式的请求体
             Map<String, Object> apiRequestBody = new HashMap<>();
-            apiRequestBody.put("model", "moonshot-v1-8k");
+            apiRequestBody.put("model", "deepseek-chat");
             apiRequestBody.put("temperature", 0.3);
 
             List<Map<String, String>> messages = new ArrayList<>();
