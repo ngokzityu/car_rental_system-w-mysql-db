@@ -21,7 +21,8 @@ public class SecurityConfig {
     private final AuthEntryPointJwt unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService, AuthEntryPointJwt unauthorizedHandler, JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, AuthEntryPointJwt unauthorizedHandler,
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.userDetailsService = userDetailsService;
         this.unauthorizedHandler = unauthorizedHandler;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -54,11 +55,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/index.html", "/customer.html", "/images/**", "/js/**", "/css/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/vehicles/**", "/api/models/**", "/api/stores/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/vehicles/generate").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/customers/**", "/api/orders/**").permitAll()
-                        .anyRequest().authenticated()
-                );
+                        // 开发阶段：允许所有车辆、车型、门店、客户、订单相关的请求
+                        .requestMatchers("/api/vehicles/**", "/api/models/**", "/api/stores/**").permitAll()
+                        .requestMatchers("/api/customers/**", "/api/orders/**").permitAll()
+                        .requestMatchers("/api/payments/**", "/api/violations/**", "/api/maintenance/**").permitAll()
+                        .anyRequest().authenticated());
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

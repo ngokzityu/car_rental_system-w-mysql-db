@@ -874,16 +874,26 @@
                     submitting.editStatus = true;
                     try {
                         const vehicleId = form.editStatus.vehicleId;
-                        const updatedVehicle = vehicleList.value.find(v => v.vehicleId === vehicleId);
-                        if (updatedVehicle) {
-                            updatedVehicle.status = form.editStatus.status;
-                            await axios.put(`${baseUrl}/vehicles/${vehicleId}`, updatedVehicle);
+                        const currentVehicle = vehicleList.value.find(v => v.vehicleId === vehicleId);
+                        if (currentVehicle) {
+                            // 只发送必要的字段，避免发送计算属性和关联对象
+                            const updateData = {
+                                vehicleId: currentVehicle.vehicleId,
+                                plateNo: currentVehicle.plateNo,
+                                currentSoc: currentVehicle.currentSoc,
+                                currentMileage: currentVehicle.currentMileage,
+                                status: form.editStatus.status,  // 使用新的状态值
+                                modelId: currentVehicle.modelId,
+                                storeId: currentVehicle.storeId
+                            };
+                            await axios.put(`${baseUrl}/vehicles/${vehicleId}`, updateData);
                             ElementPlus.ElMessage.success('状态修改成功');
                             dialogVisible.editStatus = false;
                             refreshVehicles();
                         }
                     } catch (error) {
-                        ElementPlus.ElMessage.error('修改失败');
+                        console.error('修改失败详情:', error);
+                        ElementPlus.ElMessage.error('修改失败: ' + (error.response?.data?.message || error.message));
                     } finally {
                         submitting.editStatus = false;
                     }

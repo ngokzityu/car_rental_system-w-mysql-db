@@ -70,14 +70,26 @@ public class VehicleController {
             brandId = brandRepository.findAll().get(0).getBrandId();
         }
 
-        // 1. 确保已存在车型数据
+        // 1. 确保已存在车型数据（10种 Tesla 车型）
         if (carModelRepository.count() == 0) {
-            String[] modelNames = { "Model 3", "Model Y", "Model S", "Model X", "Cybertruck" };
-            for (String name : modelNames) {
+            // 定义车型信息：名称、座位数、电池容量
+            Object[][] modelData = {
+                    { "Model 3 标准续航版", 5, 60.0 },
+                    { "Model 3 长续航版", 5, 82.0 },
+                    { "Model 3 高性能版", 5, 82.0 },
+                    { "Model Y 长续航版", 5, 75.0 },
+                    { "Model Y 高性能版", 5, 75.0 },
+                    { "Model S 长续航版", 5, 100.0 },
+                    { "Model S Plaid", 5, 100.0 },
+                    { "Model X 长续航版", 6, 100.0 },
+                    { "Model X Plaid", 6, 100.0 },
+                    { "Cybertruck 全轮驱动版", 5, 123.0 }
+            };
+            for (Object[] data : modelData) {
                 com.tesla.rental.entity.CarModel m = new com.tesla.rental.entity.CarModel();
-                m.setName(name);
-                m.setSeatCount(5); // 默认值
-                m.setBatteryCapacity(75.0); // 默认值
+                m.setName((String) data[0]);
+                m.setSeatCount((Integer) data[1]);
+                m.setBatteryCapacity((Double) data[2]);
                 m.setBrandId(brandId); // 使用实际的 Brand ID
                 carModelRepository.save(m);
             }
