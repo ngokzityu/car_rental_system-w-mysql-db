@@ -432,8 +432,16 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center" width="100">
+                    <el-table-column label="操作" align="center" width="200">
                         <template #default="scope">
+                            <!-- 已支付状态：显示确认取车按钮 -->
+                            <el-button v-if="scope.row.status === '已支付'" link type="success" size="small"
+                                @click="openPickupDialog(scope.row)">确认取车</el-button>
+
+                            <!-- 待验车状态：显示验车还车按钮 -->
+                            <el-button v-if="scope.row.status === '待验车'" link type="warning" size="small"
+                                @click="openReturnDialog(scope.row)">验车还车</el-button>
+
                             <el-button link type="danger" size="small"
                                 @click="deleteOrder(scope.row.orderId)">删除</el-button>
                         </template>
@@ -441,86 +449,7 @@
                 </el-table>
             </el-tab-pane>
 
-            <el-tab-pane label="支付记录" name="payments">
-                <div class="action-buttons">
-                    <el-button type="primary" @click="openPaymentDialog">新增支付</el-button>
-                    <el-button @click="refreshPayments">刷新</el-button>
-                </div>
-                <el-table :data="paymentList" style="width: 100%" v-loading="loading.payments">
-                    <el-table-column prop="payId" label="ID" width="60"></el-table-column>
-                    <el-table-column prop="orderId" label="订单 ID" width="80"></el-table-column>
-                    <el-table-column prop="amount" label="金额">
-                        <template #default="scope">¥ {{ scope.row.amount }}</template>
-                    </el-table-column>
-                    <el-table-column prop="type" label="类型"></el-table-column>
-                    <el-table-column label="操作" align="center" width="100">
-                        <template #default="scope">
-                            <el-button link type="danger" size="small"
-                                @click="deletePayment(scope.row.payId)">删除</el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
 
-            <el-tab-pane label="门店管理" name="stores">
-                <div class="action-buttons">
-                    <el-button type="primary" @click="openStoreDialog">添加门店</el-button>
-                    <el-button @click="refreshStores">刷新</el-button>
-                </div>
-                <el-table :data="storeList" style="width: 100%" v-loading="loading.stores">
-                    <el-table-column prop="storeId" label="ID" width="60"></el-table-column>
-                    <el-table-column prop="name" label="名称"></el-table-column>
-                    <el-table-column prop="address" label="地址"></el-table-column>
-                    <el-table-column label="操作" align="center" width="100">
-                        <template #default="scope">
-                            <el-button link type="danger" size="small"
-                                @click="deleteStore(scope.row.storeId)">删除</el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
-
-            <el-tab-pane label="违章记录" name="violations">
-                <div class="action-buttons">
-                    <el-button type="primary" @click="openViolationDialog">登记违章</el-button>
-                    <el-button @click="refreshViolations">刷新</el-button>
-                </div>
-                <el-table :data="violationList" style="width: 100%" v-loading="loading.violations">
-                    <el-table-column prop="vioId" label="ID" width="60"></el-table-column>
-                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
-                    <el-table-column prop="orderId" label="订单 ID" width="80"></el-table-column>
-                    <el-table-column prop="location" label="违章位置"></el-table-column>
-                    <el-table-column prop="fineAmount" label="罚款金额">
-                        <template #default="scope">¥ {{ scope.row.fineAmount }}</template>
-                    </el-table-column>
-                    <el-table-column label="操作" align="center" width="100">
-                        <template #default="scope">
-                            <el-button link type="danger" size="small"
-                                @click="deleteViolation(scope.row.vioId)">删除</el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
-
-            <el-tab-pane label="维护保养" name="maintenance">
-                <div class="action-buttons">
-                    <el-button type="primary" @click="openMaintenanceDialog">登记维护</el-button>
-                    <el-button @click="refreshMaintenance">刷新</el-button>
-                </div>
-                <el-table :data="maintenanceList" style="width: 100%" v-loading="loading.maintenance">
-                    <el-table-column prop="maintId" label="ID" width="60"></el-table-column>
-                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
-                    <el-table-column prop="type" label="类型"></el-table-column>
-                    <el-table-column prop="maintDate" label="维护日期"></el-table-column>
-                    <el-table-column prop="description" label="描述"></el-table-column>
-                    <el-table-column label="操作" align="center" width="100">
-                        <template #default="scope">
-                            <el-button link type="danger" size="small"
-                                @click="deleteMaintenance(scope.row.maintId)">删除</el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-tab-pane>
         </el-tabs>
 
         <el-dialog v-model="dialogVisible.vehicle" title="新增车辆" width="500px">
@@ -708,6 +637,60 @@
                 <el-button type="primary" @click="submitStatusChange" :loading="submitting.editStatus">保存</el-button>
             </template>
         </el-dialog>
+
+        <!-- 确认取车对话框 -->
+        <el-dialog v-model="dialogVisible.pickup" title="确认取车" width="500px">
+            <el-form :model="form.pickup" label-position="top">
+                <el-form-item label="订单 ID">
+                    <el-input v-model="form.pickup.orderId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="实际取车时间">
+                    <el-input v-model="form.pickup.actualPickupTime" type="datetime-local"></el-input>
+                </el-form-item>
+                <el-form-item label="取车里程 (km)">
+                    <el-input-number v-model="form.pickup.pickupMileage" :min="0" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="取车电量 (%)">
+                    <el-input-number v-model="form.pickup.actualPickupSoc" :min="0" :max="100" :step="0.1"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.pickup = false">取消</el-button>
+                <el-button type="primary" @click="submitPickup" :loading="submitting.pickup">确认取车</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 确认还车对话框 -->
+        <el-dialog v-model="dialogVisible.returnConfirm" title="验车还车" width="500px">
+            <el-form :model="form.returnConfirm" label-position="top">
+                <el-form-item label="订单 ID">
+                    <el-input v-model="form.returnConfirm.orderId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="取车记录">
+                    <div style="padding: 10px; background: #f5f5f7; border-radius: 8px; font-size: 13px;">
+                        <p>取车里程: {{ form.returnConfirm.pickupMileage || '-' }} km</p>
+                        <p>取车电量: {{ form.returnConfirm.pickupSoc || '-' }} %</p>
+                    </div>
+                </el-form-item>
+                <el-form-item label="实际还车时间">
+                    <el-input v-model="form.returnConfirm.actualReturnTime" type="datetime-local"></el-input>
+                </el-form-item>
+                <el-form-item label="还车里程 (km)">
+                    <el-input-number v-model="form.returnConfirm.returnMileage" :min="0"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="还车电量 (%)">
+                    <el-input-number v-model="form.returnConfirm.actualReturnSoc" :min="0" :max="100" :step="0.1"
+                        style="width: 100%"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.returnConfirm = false">取消</el-button>
+                <el-button type="primary" @click="submitReturnConfirm"
+                    :loading="submitting.returnConfirm">确认还车</el-button>
+            </template>
+        </el-dialog>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -724,11 +707,7 @@
                 const loading = reactive({
                     vehicles: false,
                     customers: false,
-                    orders: false,
-                    payments: false,
-                    stores: false,
-                    violations: false,
-                    maintenance: false
+                    orders: false
                 });
 
                 // 模拟数据
@@ -739,10 +718,6 @@
                 ]);
                 const customerList = ref([]);
                 const orderList = ref([]);
-                const paymentList = ref([]);
-                const storeList = ref([]);
-                const violationList = ref([]);
-                const maintenanceList = ref([]);
                 const carModels = ref([]);
 
                 const vehicleStats = computed(() => ({
@@ -755,33 +730,39 @@
                     vehicle: false,
                     customer: false,
                     order: false,
-                    payment: false,
-                    store: false,
-                    violation: false,
-                    maintenance: false,
-                    editStatus: false
+                    editStatus: false,
+                    pickup: false,
+                    returnConfirm: false
                 });
 
                 const submitting = reactive({
                     vehicle: false,
                     customer: false,
                     order: false,
-                    payment: false,
-                    store: false,
-                    violation: false,
-                    maintenance: false,
-                    editStatus: false
+                    editStatus: false,
+                    pickup: false,
+                    returnConfirm: false
                 });
 
                 const form = reactive({
                     vehicle: { plateNo: '', currentSoc: 100, currentMileage: 0, status: '在库', modelId: null, storeId: null },
                     customer: { name: '', phone: '', idCard: '', driverLicense: '' },
                     order: { customerId: null, vehicleId: null, rentStart: '', rentEnd: '', pickupStoreId: null, returnStoreId: null, totalAmount: 0, status: 'active', pickupSoc: 100, returnSoc: 100 },
-                    payment: { orderId: null, amount: 0, type: '押金' },
-                    store: { name: '', address: '' },
-                    violation: { vehicleId: null, orderId: null, location: '', fineAmount: 0 },
-                    maintenance: { vehicleId: null, type: '', maintDate: '', description: '' },
-                    editStatus: { vehicleId: null, status: '在库' }
+                    editStatus: { vehicleId: null, status: '在库' },
+                    pickup: {
+                        orderId: null,
+                        actualPickupTime: '',
+                        pickupMileage: 0,
+                        actualPickupSoc: 100
+                    },
+                    returnConfirm: {
+                        orderId: null,
+                        pickupMileage: null,  // 只读，显示用
+                        pickupSoc: null,      // 只读，显示用
+                        actualReturnTime: '',
+                        returnMileage: 0,
+                        actualReturnSoc: 50
+                    }
                 });
 
                 const baseUrl = 'http://localhost:8080/api';
@@ -989,6 +970,89 @@
                     });
                 };
 
+                // 打开取车确认对话框
+                const openPickupDialog = (order) => {
+                    form.pickup = {
+                        orderId: order.orderId,
+                        actualPickupTime: new Date().toISOString().slice(0, 16),  // 默认当前时间
+                        pickupMileage: 0,
+                        actualPickupSoc: 100
+                    };
+                    dialogVisible.pickup = true;
+                };
+
+                // 提交取车确认
+                const submitPickup = async () => {
+                    if (!form.pickup.actualPickupTime || !form.pickup.pickupMileage) {
+                        ElementPlus.ElMessage.warning('请填写所有必填字段');
+                        return;
+                    }
+
+                    submitting.pickup = true;
+                    try {
+                        const payload = {
+                            actualPickupTime: form.pickup.actualPickupTime.replace('T', ' ') + ':00',
+                            pickupMileage: form.pickup.pickupMileage,
+                            actualPickupSoc: form.pickup.actualPickupSoc
+                        };
+
+                        await axios.put(`${baseUrl}/orders/${form.pickup.orderId}/pickup`, payload);
+                        ElementPlus.ElMessage.success('取车确认成功！');
+                        dialogVisible.pickup = false;
+                        refreshOrders();
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('取车确认失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        submitting.pickup = false;
+                    }
+                };
+
+                // 打开还车确认对话框
+                const openReturnDialog = (order) => {
+                    form.returnConfirm = {
+                        orderId: order.orderId,
+                        pickupMileage: order.pickupMileage,  // 显示取车时的里程
+                        pickupSoc: order.actualPickupSoc,     // 显示取车时的电量
+                        actualReturnTime: new Date().toISOString().slice(0, 16),
+                        returnMileage: order.pickupMileage || 0,  // 默认值不小于取车里程
+                        actualReturnSoc: 50
+                    };
+                    dialogVisible.returnConfirm = true;
+                };
+
+                // 提交还车确认
+                const submitReturnConfirm = async () => {
+                    if (!form.returnConfirm.actualReturnTime || !form.returnConfirm.returnMileage) {
+                        ElementPlus.ElMessage.warning('请填写所有必填字段');
+                        return;
+                    }
+
+                    // 验证还车里程
+                    if (form.returnConfirm.returnMileage < form.returnConfirm.pickupMileage) {
+                        ElementPlus.ElMessage.warning('还车里程不能小于取车里程');
+                        return;
+                    }
+
+                    submitting.returnConfirm = true;
+                    try {
+                        const payload = {
+                            actualReturnTime: form.returnConfirm.actualReturnTime.replace('T', ' ') + ':00',
+                            returnMileage: form.returnConfirm.returnMileage,
+                            actualReturnSoc: form.returnConfirm.actualReturnSoc
+                        };
+
+                        await axios.put(`${baseUrl}/orders/${form.returnConfirm.orderId}/confirm-return`, payload);
+                        ElementPlus.ElMessage.success('还车确认成功！车辆已上架');
+                        dialogVisible.returnConfirm = false;
+                        refreshOrders();
+                        refreshVehicles();  // 车辆状态已更新，刷新车辆列表
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('还车确认失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        submitting.returnConfirm = false;
+                    }
+                };
+
                 // --- 支付管理 ---
                 const refreshPayments = async () => {
                     loading.payments = true;
@@ -1181,10 +1245,6 @@
                     vehicleList,
                     customerList,
                     orderList,
-                    paymentList,
-                    storeList,
-                    violationList,
-                    maintenanceList,
                     vehicleStats,
                     dialogVisible,
                     submitting,
@@ -1202,22 +1262,10 @@
                     openOrderDialog,
                     submitOrder,
                     deleteOrder,
-                    refreshPayments,
-                    openPaymentDialog,
-                    submitPayment,
-                    deletePayment,
-                    refreshStores,
-                    openStoreDialog,
-                    submitStore,
-                    deleteStore,
-                    refreshViolations,
-                    openViolationDialog,
-                    submitViolation,
-                    deleteViolation,
-                    refreshMaintenance,
-                    openMaintenanceDialog,
-                    submitMaintenance,
-                    deleteMaintenance,
+                    openPickupDialog,
+                    submitPickup,
+                    openReturnDialog,
+                    submitReturnConfirm,
                     openEditStatusDialog,
                     submitStatusChange
                 };

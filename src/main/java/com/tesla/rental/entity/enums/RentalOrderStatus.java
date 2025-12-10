@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum RentalOrderStatus {
     PAID(0, "已支付"),
-    RENTED(1, "在租"),
-    RETURNED(2, "已还"),
-    SETTLED(3, "结算");
+    RENTED(1, "使用中"),
+    PENDING_INSPECTION(2, "待验车"),
+    COMPLETED(3, "已完成");
 
     private final int code;
     private final String label;

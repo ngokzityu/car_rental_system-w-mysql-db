@@ -430,7 +430,8 @@
                 <button class="model-btn" :class="{ active: currentFilter === 'ALL' }" @click="currentFilter = 'ALL'">
                     全部车型
                 </button>
-                <button v-if="aiRecommendedModels.length > 0" class="model-btn" :class="{ active: currentFilter === 'AI' }" @click="currentFilter = 'AI'">
+                <button v-if="aiRecommendedModels.length > 0" class="model-btn"
+                    :class="{ active: currentFilter === 'AI' }" @click="currentFilter = 'AI'">
                     AI 推荐
                 </button>
                 <button class="model-btn" :class="{ active: currentFilter === model }" v-for="model in availableModels"
@@ -602,7 +603,7 @@
                         if (data.recommendedModels && data.recommendedModels.length > 0) {
                             aiRecommendedModels.value = data.recommendedModels;
                             currentFilter.value = 'AI';
-                            
+
                             const modelsStr = data.recommendedModels.join(', ');
                             ElementPlus.ElMessage.success(`已为您切换至 "AI 推荐"：${modelsStr}`);
 
@@ -668,8 +669,8 @@
                     if (currentFilter.value === 'ALL') {
                         // Do nothing, show all
                     } else if (currentFilter.value === 'AI') {
-                         // 过滤出在推荐列表中的车型
-                         result = result.filter(v => aiRecommendedModels.value.includes(v.carModelName));
+                        // 过滤出在推荐列表中的车型
+                        result = result.filter(v => aiRecommendedModels.value.includes(v.carModelName));
                     } else {
                         // 具体车型
                         result = result.filter(v => v.carModelName === currentFilter.value);
@@ -774,6 +775,23 @@
                     };
                     return imageMap[modelName] || '/images/model3.png';
                 };
+
+                // 申请还车 (for console testing or future UI)
+                const applyReturn = async (orderId) => {
+                    if (!confirm('确认申请还车吗？请确保已将车辆开回门店。')) {
+                        return;
+                    }
+
+                    try {
+                        await axios.put(`${baseUrl}/orders/${orderId}/apply-return`);
+                        ElementPlus.ElMessage.success('还车申请已提交！请前往门店进行验车。');
+                    } catch (error) {
+                        console.error(error);
+                        ElementPlus.ElMessage.error('申请失败: ' + (error.response?.data?.message || error.message));
+                    }
+                };
+                // Expose to window for testing
+                window.applyReturn = applyReturn;
 
                 onMounted(() => {
                     fetchVehicles();
