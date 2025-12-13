@@ -138,6 +138,7 @@ curl -X POST http://localhost:8080/api/auth/signin \
 | **门店** | `/api/stores` | 租赁点管理 |
 | **订单** | `/api/orders` | 租赁订单创建与查询 |
 | **客户** | `/api/customers` | 客户信息与信用分 |
+| **故障工单** | `/api/faults` | 用车期间报障、现场维修/更换车辆 |
 | **支付** | `/api/payments` | 支付记录流水 |
 | **违章** | `/api/violations` | 违章记录登记 |
 | **维保** | `/api/maintenance` | 车辆维保记录 |

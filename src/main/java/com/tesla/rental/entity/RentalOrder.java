@@ -40,6 +40,12 @@ public class RentalOrder {
     @Column(name = "vehicle_id")
     private Long vehicleId; // 车辆ID
 
+    /**
+     * 当前实际用车ID，用于换车后仍保持订单原始车辆记录不变
+     */
+    @Column(name = "current_vehicle_id")
+    private Long currentVehicleId;
+
     @Column(name = "pickup_store_id")
     private Long pickupStoreId; // 取车门店
 

@@ -408,9 +408,8 @@
             <div class="navbar-content">
                 <a href="#" class="logo"> Tesla 租赁</a>
                 <div>
-                    <a href="#" class="nav-link">车型</a>
-                    <a href="#" class="nav-link">充电</a>
-                    <a href="#" class="nav-link">发现</a>
+                    <a href="#" class="nav-link" @click="dialogVisible = false; currentFilter='ALL'">车型</a>
+                    <a href="#" class="nav-link" @click="openMyOrders">我的订单</a>
                 </div>
             </div>
         </nav>
@@ -497,6 +496,81 @@
                 <el-button @click="dialogVisible = false">取消</el-button>
                 <el-button type="primary" @click="submitBooking" :loading="submitting">确认预订</el-button>
             </template>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitBooking" :loading="submitting">确认预订</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- My Orders Dialog -->
+        <el-dialog v-model="myOrdersVisible" title="我的订单" width="1000px" align-center>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <el-input v-model="myOrdersPhone" placeholder="请输入预订时的手机号码" style="flex: 1"
+                    @keyup.enter="searchMyOrders"></el-input>
+                <el-button type="primary" @click="searchMyOrders" :loading="searchingMyOrders">查询</el-button>
+            </div>
+            <div style="margin: -10px 0 12px; color: #909399; font-size: 12px;">
+                提示：在“使用中/待验车”订单右侧点击“报故障”即可提交工单。
+            </div>
+
+            <el-table :data="myOrdersList" style="width: 100%" empty-text="请输入手机号查询或暂无订单">
+                <el-table-column prop="vehicleName" label="车辆" width="120"></el-table-column>
+                <el-table-column prop="plateNo" label="车牌号" width="100"></el-table-column>
+                <el-table-column label="状态" align="center" width="100">
+                    <template #default="scope">
+                        <el-tag :type="
+                            scope.row.status === '已支付' ? 'info' : 
+                            scope.row.status === '使用中' ? 'success' : 
+                            scope.row.status === '待验车' ? 'warning' : 'info'" effect="light">
+                            {{ scope.row.status }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="故障工单" width="120" align="center">
+                    <template #default="scope">
+                        <el-tag v-if="scope.row.faultStatus"
+                            :type="scope.row.faultStatus === '待解决' ? 'danger' : 'success'">
+                            {{ scope.row.faultStatus }}
+                        </el-tag>
+                        <span v-else style="color: #909399;">无</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="rentStart" label="起租时间" width="160"></el-table-column>
+                <el-table-column prop="rentEnd" label="还车时间" width="160"></el-table-column>
+                <el-table-column label="操作" align="center" min-width="220">
+                    <template #default="scope">
+                        <el-button v-if="scope.row.status === '使用中'" type="primary" size="small"
+                            @click="applyReturn(scope.row.orderId)">申请还车</el-button>
+                        <el-button v-if="(scope.row.status === '使用中' || scope.row.status === '待验车')" type="danger"
+                            size="small" :disabled="scope.row.faultStatus === '待解决'"
+                            @click="openFaultDialog(scope.row)">报故障</el-button>
+                        <span v-else-if="scope.row.status === '已支付'" style="color: #999; font-size: 12px;">等待取车</span>
+                        <span v-else-if="scope.row.status === '待验车'"
+                            style="color: #e6a23c; font-size: 12px;">请前往门店验车</span>
+                        <span v-else-if="scope.row.status === '已完成'"
+                            style="color: #67c23a; font-size: 12px;">订单已结束</span>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+
+        <!-- 故障报修 -->
+        <el-dialog v-model="faultDialogVisible" title="车辆故障报修" width="500px" align-center>
+            <el-form :model="faultForm" label-position="top">
+                <el-form-item label="订单 ID">
+                    <el-input v-model="faultForm.orderId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="车辆 ID">
+                    <el-input v-model="faultForm.vehicleId" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="故障描述">
+                    <el-input type="textarea" v-model="faultForm.description" placeholder="请描述发现的故障现象"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="faultDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitFault" :loading="faultSubmitting">提交工单</el-button>
+            </template>
         </el-dialog>
 
         <!-- Chat Widget -->
@@ -565,6 +639,24 @@
                     idCard: '',
                     driverLicense: ''
                 });
+
+                // My Orders State
+                const myOrdersVisible = ref(false);
+                const myOrdersPhone = ref('');
+                const myOrdersList = ref([]);
+                const searchingMyOrders = ref(false);
+                const currentCustomerId = ref(null);
+
+                // 故障报修
+                const faultDialogVisible = ref(false);
+                const faultSubmitting = ref(false);
+                const faultForm = reactive({
+                    orderId: null,
+                    vehicleId: null,
+                    customerId: null,
+                    description: ''
+                });
+                const faultTickets = ref([]);
 
                 const baseUrl = 'http://localhost:8080/api';
 
@@ -776,22 +868,129 @@
                     return imageMap[modelName] || '/images/model3.png';
                 };
 
-                // 申请还车 (for console testing or future UI)
+                // 申请还车
                 const applyReturn = async (orderId) => {
                     if (!confirm('确认申请还车吗？请确保已将车辆开回门店。')) {
                         return;
                     }
 
                     try {
-                        await axios.put(`${baseUrl}/orders/${orderId}/apply-return`);
+                        const res = await axios.put(`${baseUrl}/orders/${orderId}/apply-return`);
                         ElementPlus.ElMessage.success('还车申请已提交！请前往门店进行验车。');
+                        // 刷新订单列表
+                        searchMyOrders();
                     } catch (error) {
                         console.error(error);
                         ElementPlus.ElMessage.error('申请失败: ' + (error.response?.data?.message || error.message));
                     }
                 };
-                // Expose to window for testing
-                window.applyReturn = applyReturn;
+
+                // 报故障
+                const openFaultDialog = (order) => {
+                    faultForm.orderId = order.orderId;
+                    faultForm.vehicleId = order.currentVehicleId || order.vehicleId;
+                    faultForm.customerId = order.customerId || currentCustomerId.value;
+                    faultForm.description = '';
+                    faultDialogVisible.value = true;
+                };
+
+                const submitFault = async () => {
+                    if (!faultForm.description) {
+                        ElementPlus.ElMessage.warning('请填写故障描述');
+                        return;
+                    }
+                    faultSubmitting.value = true;
+                    try {
+                        await axios.post(`${baseUrl}/faults`, faultForm);
+                        ElementPlus.ElMessage.success('已提交故障工单，工作人员将尽快处理');
+                        faultDialogVisible.value = false;
+                        searchMyOrders();
+                    } catch (error) {
+                        console.error(error);
+                        ElementPlus.ElMessage.error('提交失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        faultSubmitting.value = false;
+                    }
+                };
+
+                // My Orders Logic
+                const openMyOrders = () => {
+                    myOrdersVisible.value = true;
+                    // 如果已经有手机号（比如刚下过单），自动填充
+                    if (form.phone) {
+                        myOrdersPhone.value = form.phone;
+                    }
+                };
+
+                const searchMyOrders = async () => {
+                    if (!myOrdersPhone.value) {
+                        ElementPlus.ElMessage.warning('请输入手机号码');
+                        return;
+                    }
+
+                    searchingMyOrders.value = true;
+                    myOrdersList.value = [];
+
+                    try {
+                        // 1. 获取所有客户找到对应ID
+                        // (优化方案：后端提供按手机号查用户的接口，但这里为了最少改动使用全量过滤)
+                        const customersRes = await axios.get(`${baseUrl}/customers`);
+                        const customer = customersRes.data.find(c => c.phone === myOrdersPhone.value);
+
+                        if (!customer) {
+                            ElementPlus.ElMessage.info('未找到该手机号的记录');
+                            return;
+                        }
+
+                        // 2. 获取所有订单过滤该客户的订单
+                        // (同样，实际生产中应使用后端查询参数 /api/orders?customerId=...)
+                        const ordersRes = await axios.get(`${baseUrl}/orders`);
+                        const myOrders = ordersRes.data.filter(o => o.customerId === customer.customerId);
+                        currentCustomerId.value = customer.customerId;
+
+                        // 3. 丰富订单信息（车辆信息 + 故障工单）
+                        const vehiclesRes = await axios.get(`${baseUrl}/vehicles`);
+                        const modelsRes = await axios.get(`${baseUrl}/models`); // 获取车型名称
+                        const faultsRes = await axios.get(`${baseUrl}/faults`);
+                        faultTickets.value = faultsRes.data || [];
+
+                        const faultByOrder = {};
+                        faultTickets.value.forEach(t => {
+                            if (!t.orderId) return;
+                            const existing = faultByOrder[t.orderId];
+                            if (!existing || (t.reportedTime && (!existing?.reportedTime || t.reportedTime > existing.reportedTime))) {
+                                faultByOrder[t.orderId] = t;
+                            }
+                        });
+
+                        const enrichedOrders = myOrders.map(order => {
+                            const vehicleIdForDisplay = order.currentVehicleId || order.vehicleId;
+                            const vehicle = vehiclesRes.data.find(v => v.vehicleId === vehicleIdForDisplay);
+                            const modelName = vehicle ? (vehicle.carModelName || 'Unknown Model') : '未知车辆';
+                            const fault = faultByOrder[order.orderId];
+
+                            return {
+                                ...order,
+                                vehicleName: modelName,
+                                plateNo: vehicle ? vehicle.plateNo : '---',
+                                status: order.status, // 假设后端返回的是中文 label 或者 枚举名。RentalOrderStatus JSON value是label
+                                faultStatus: fault ? fault.status : null,
+                                faultTicketId: fault ? fault.ticketId : null
+                            };
+                        });
+
+                        // 按时间倒序
+                        enrichedOrders.sort((a, b) => new Date(b.rentStart) - new Date(a.rentStart));
+
+                        myOrdersList.value = enrichedOrders;
+
+                    } catch (e) {
+                        console.error("查询订单失败", e);
+                        ElementPlus.ElMessage.error('查询失败，请检查网络');
+                    } finally {
+                        searchingMyOrders.value = false;
+                    }
+                };
 
                 onMounted(() => {
                     fetchVehicles();
@@ -815,6 +1014,19 @@
                     submitBooking,
                     fetchVehicles,
                     getCarImage,
+                    // My Orders
+                    myOrdersVisible,
+                    myOrdersPhone,
+                    myOrdersList,
+                    searchingMyOrders,
+                    openMyOrders,
+                    searchMyOrders,
+                    applyReturn,
+                    faultDialogVisible,
+                    faultForm,
+                    faultSubmitting,
+                    openFaultDialog,
+                    submitFault,
                     // Chat
                     chatVisible,
                     chatInput,

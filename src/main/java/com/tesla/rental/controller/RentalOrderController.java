@@ -9,6 +9,7 @@ import com.tesla.rental.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,7 @@ public class RentalOrderController {
 
     @GetMapping
     public List<RentalOrder> getAllOrders() {
-        return orderRepository.findAll();
+        return orderRepository.findAll(Sort.by(Sort.Direction.DESC, "orderId"));
     }
 
     @PostMapping
@@ -34,12 +35,17 @@ public class RentalOrderController {
         if (order.getStatus() == null) {
             order.setStatus(RentalOrderStatus.PAID);
         }
+        // 初始化当前用车ID，保持原始车辆ID不可变
+        if (order.getCurrentVehicleId() == null) {
+            order.setCurrentVehicleId(order.getVehicleId());
+        }
         // 保存订单
         RentalOrder savedOrder = orderRepository.save(order);
 
         // 更新车辆状态为"在租"
-        if (order.getVehicleId() != null) {
-            Optional<Vehicle> vehicleOpt = vehicleRepository.findById(order.getVehicleId());
+        Long vehicleIdToRent = order.getCurrentVehicleId() != null ? order.getCurrentVehicleId() : order.getVehicleId();
+        if (vehicleIdToRent != null) {
+            Optional<Vehicle> vehicleOpt = vehicleRepository.findById(vehicleIdToRent);
             if (vehicleOpt.isPresent()) {
                 Vehicle vehicle = vehicleOpt.get();
                 vehicle.setStatus(VehicleStatus.RENTED);
@@ -153,8 +159,9 @@ public class RentalOrderController {
         RentalOrder savedOrder = orderRepository.save(order);
 
         // 【关键】释放车辆：更新车辆状态为"在库"，并更新车辆当前里程和电量
-        if (order.getVehicleId() != null) {
-            Optional<Vehicle> vehicleOpt = vehicleRepository.findById(order.getVehicleId());
+        Long vehicleIdToRelease = order.getCurrentVehicleId() != null ? order.getCurrentVehicleId() : order.getVehicleId();
+        if (vehicleIdToRelease != null) {
+            Optional<Vehicle> vehicleOpt = vehicleRepository.findById(vehicleIdToRelease);
             if (vehicleOpt.isPresent()) {
                 Vehicle vehicle = vehicleOpt.get();
                 vehicle.setStatus(VehicleStatus.IN_STOCK); // 0=在库

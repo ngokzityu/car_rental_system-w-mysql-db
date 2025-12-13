@@ -178,6 +178,16 @@
             box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
         }
 
+        /* 提升表格内链接按钮的可读性 */
+        .el-button.is-link.el-button--primary {
+            color: var(--apple-blue) !important;
+            font-weight: 600 !important;
+        }
+
+        .el-button.is-link.el-button--primary:hover {
+            color: var(--apple-blue-hover) !important;
+        }
+
         .el-button--primary:hover {
             transform: scale(1.02);
             box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4);
@@ -194,6 +204,39 @@
             background: #fff !important;
             transform: scale(1.02);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* 故障处理操作按钮，统一外观 */
+        .fault-action-btn {
+            position: relative;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 14px !important;
+            border-radius: 999px !important;
+            background: #fff !important;
+            color: #0071e3 !important;
+            border: 1.5px solid #0071e3 !important;
+            font-weight: 700 !important;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+        }
+
+        .fault-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(0, 113, 227, 0.2);
+        }
+
+        .fault-action-btn--swap {
+            color: #f7b500 !important;
+            border-color: #f7b500 !important;
+            box-shadow: 0 0 0 3px rgba(247, 181, 0, 0.18);
+        }
+
+        .fault-action-btn--swap:hover {
+            box-shadow: 0 8px 20px rgba(247, 181, 0, 0.24);
         }
 
         /* Table */
@@ -383,7 +426,7 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center" width="180">
                         <template #default="scope">
-                            <el-button link type="primary" size="small"
+                            <el-button type="primary" size="small"
                                 @click="openEditStatusDialog(scope.row)">修改状态</el-button>
                             <el-button link type="danger" size="small"
                                 @click="deleteVehicle(scope.row.vehicleId)">删除</el-button>
@@ -419,8 +462,16 @@
                 </div>
                 <el-table :data="orderList" style="width: 100%" v-loading="loading.orders">
                     <el-table-column prop="orderId" label="ID" width="60"></el-table-column>
-                    <el-table-column prop="customerId" label="客户 ID" width="80"></el-table-column>
-                    <el-table-column prop="vehicleId" label="车辆 ID" width="80"></el-table-column>
+                    <el-table-column label="客户手机号" width="120">
+                        <template #default="scope">
+                            {{ getCustomerPhone(scope.row.customerId) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="车牌号" width="100">
+                        <template #default="scope">
+                            {{ getOrderVehiclePlate(scope.row) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="rentStart" label="起租时间" width="160"></el-table-column>
                     <el-table-column prop="rentEnd" label="还车时间" width="160"></el-table-column>
                     <el-table-column prop="pickupSoc" label="取车电量(%)"></el-table-column>
@@ -444,6 +495,43 @@
 
                             <el-button link type="danger" size="small"
                                 @click="deleteOrder(scope.row.orderId)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-tab-pane>
+
+            <el-tab-pane label="故障工单" name="faults">
+                <div class="action-buttons">
+                    <el-button @click="refreshFaults">刷新</el-button>
+                </div>
+                <el-table :data="faultList" style="width: 100%" v-loading="loading.faults">
+                    <el-table-column prop="ticketId" label="工单ID" width="90"></el-table-column>
+                    <el-table-column prop="orderId" label="订单ID" width="90"></el-table-column>
+                    <el-table-column label="车牌号" width="120">
+                        <template #default="scope">
+                            {{ getVehiclePlate(scope.row.vehicleId) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态" width="100" align="center">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status === '待解决' ? 'warning' : 'success'">
+                                {{ scope.row.status }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="resolutionType" label="处理方式" width="120"></el-table-column>
+                    <el-table-column prop="description" label="描述"></el-table-column>
+                    <el-table-column prop="reportedTime" label="报障时间" width="160"></el-table-column>
+                    <el-table-column prop="handledBy" label="处理人" width="120"></el-table-column>
+                    <el-table-column label="操作" width="200" align="center">
+                        <template #default="scope">
+                            <el-button v-if="scope.row.status === '待解决'" link type="primary" size="small"
+                                class="fault-action-btn"
+                                @click="openFaultResolveDialog(scope.row, '现场维修')">现场维修</el-button>
+                            <el-button v-if="scope.row.status === '待解决'" link type="warning" size="small"
+                                class="fault-action-btn fault-action-btn--swap"
+                                @click="openFaultResolveDialog(scope.row, '更换车辆')">更换车辆</el-button>
+                            <span v-else style="color: #67c23a;">已解决</span>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -691,6 +779,35 @@
                     :loading="submitting.returnConfirm">确认还车</el-button>
             </template>
         </el-dialog>
+
+        <!-- 故障工单处理 -->
+        <el-dialog v-model="dialogVisible.faultResolve" title="处理故障工单" width="500px">
+            <el-form :model="form.faultResolve" label-position="top">
+                <el-form-item label="处理方案">
+                    <el-radio-group v-model="form.faultResolve.resolutionType">
+                        <el-radio label="现场维修">现场维修</el-radio>
+                        <el-radio label="更换车辆">更换车辆</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="处理人">
+                    <el-input v-model="form.faultResolve.handledBy" placeholder="输入处理人"></el-input>
+                </el-form-item>
+                <el-form-item v-if="form.faultResolve.resolutionType === '更换车辆'" label="选择在库车辆">
+                    <el-select v-model="form.faultResolve.newVehicleId" placeholder="请选择新车" filterable
+                        style="width: 100%">
+                        <el-option v-for="v in availableStockVehicles" :key="v.vehicleId"
+                            :label="`${v.plateNo} (${v.carModelName || '车辆'})`" :value="v.vehicleId"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input v-model="form.faultResolve.remark" type="textarea" placeholder="维修情况或换车原因"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible.faultResolve = false">取消</el-button>
+                <el-button type="primary" @click="submitFaultResolve" :loading="submitting.faultResolve">提交</el-button>
+            </template>
+        </el-dialog>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -707,7 +824,12 @@
                 const loading = reactive({
                     vehicles: false,
                     customers: false,
-                    orders: false
+                    orders: false,
+                    faults: false,
+                    payments: false,
+                    stores: false,
+                    violations: false,
+                    maintenance: false
                 });
 
                 // 模拟数据
@@ -718,6 +840,11 @@
                 ]);
                 const customerList = ref([]);
                 const orderList = ref([]);
+                const faultList = ref([]);
+                const paymentList = ref([]);
+                const storeList = ref([]);
+                const violationList = ref([]);
+                const maintenanceList = ref([]);
                 const carModels = ref([]);
 
                 const vehicleStats = computed(() => ({
@@ -726,13 +853,21 @@
                     total: vehicleList.value.length
                 }));
 
+                const availableStockVehicles = computed(() =>
+                    vehicleList.value.filter(v => v.status === '在库'));
+
                 const dialogVisible = reactive({
                     vehicle: false,
                     customer: false,
                     order: false,
                     editStatus: false,
                     pickup: false,
-                    returnConfirm: false
+                    returnConfirm: false,
+                    faultResolve: false,
+                    payment: false,
+                    store: false,
+                    violation: false,
+                    maintenance: false
                 });
 
                 const submitting = reactive({
@@ -741,7 +876,12 @@
                     order: false,
                     editStatus: false,
                     pickup: false,
-                    returnConfirm: false
+                    returnConfirm: false,
+                    faultResolve: false,
+                    payment: false,
+                    store: false,
+                    violation: false,
+                    maintenance: false
                 });
 
                 const form = reactive({
@@ -762,6 +902,17 @@
                         actualReturnTime: '',
                         returnMileage: 0,
                         actualReturnSoc: 50
+                    },
+                    payment: { orderId: null, amount: 0, type: '押金' },
+                    store: { name: '', address: '' },
+                    violation: { vehicleId: null, orderId: null, location: '', fineAmount: 0 },
+                    maintenance: { vehicleId: null, type: '', maintDate: '', description: '' },
+                    faultResolve: {
+                        ticketId: null,
+                        resolutionType: '现场维修',
+                        handledBy: '',
+                        remark: '',
+                        newVehicleId: null
                     }
                 });
 
@@ -1053,6 +1204,62 @@
                     }
                 };
 
+                // --- 故障工单 ---
+                const refreshFaults = async () => {
+                    loading.faults = true;
+                    try {
+                        const response = await axios.get(`${baseUrl}/faults`);
+                        faultList.value = response.data || [];
+                    } catch (error) { } finally {
+                        loading.faults = false;
+                    }
+                };
+
+                const openFaultResolveDialog = (ticket, resolutionType) => {
+                    form.faultResolve = {
+                        ticketId: ticket.ticketId,
+                        resolutionType: resolutionType,
+                        handledBy: '',
+                        remark: '',
+                        newVehicleId: null
+                    };
+                    if (resolutionType === '更换车辆' && vehicleList.value.length === 0) {
+                        refreshVehicles();
+                    }
+                    dialogVisible.faultResolve = true;
+                };
+
+                const submitFaultResolve = async () => {
+                    if (!form.faultResolve.ticketId) {
+                        return;
+                    }
+                    if (form.faultResolve.resolutionType === '更换车辆' && !form.faultResolve.newVehicleId) {
+                        ElementPlus.ElMessage.warning('请选择要替换的车辆');
+                        return;
+                    }
+                    submitting.faultResolve = true;
+                    try {
+                        const payload = {
+                            resolutionType: form.faultResolve.resolutionType,
+                            handledBy: form.faultResolve.handledBy,
+                            remark: form.faultResolve.remark,
+                            newVehicleId: form.faultResolve.resolutionType === '更换车辆'
+                                ? form.faultResolve.newVehicleId
+                                : null
+                        };
+                        await axios.put(`${baseUrl}/faults/${form.faultResolve.ticketId}/resolve`, payload);
+                        ElementPlus.ElMessage.success('工单处理成功');
+                        dialogVisible.faultResolve = false;
+                        refreshFaults();
+                        refreshOrders();
+                        refreshVehicles();
+                    } catch (error) {
+                        ElementPlus.ElMessage.error('处理失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        submitting.faultResolve = false;
+                    }
+                };
+
                 // --- 支付管理 ---
                 const refreshPayments = async () => {
                     loading.payments = true;
@@ -1235,7 +1442,28 @@
 
                 onMounted(() => {
                     refreshVehicles();
+                    refreshCustomers();
+                    refreshOrders();
+                    refreshFaults();
                 });
+
+                // 辅助函数：获取客户手机号
+                const getCustomerPhone = (customerId) => {
+                    const customer = customerList.value.find(c => c.customerId === customerId);
+                    return customer ? customer.phone : customerId; // 如果找不到显示ID
+                };
+
+                // 辅助函数：获取车牌号
+                const getVehiclePlate = (vehicleId) => {
+                    const vehicle = vehicleList.value.find(v => v.vehicleId === vehicleId);
+                    return vehicle ? vehicle.plateNo : vehicleId; // 如果找不到显示ID
+                };
+
+                // 辅助函数：获取订单当前车牌（优先使用当前用车ID）
+                const getOrderVehiclePlate = (order) => {
+                    const vehicleId = order.currentVehicleId || order.vehicleId;
+                    return getVehiclePlate(vehicleId);
+                };
 
                 return {
                     carModels,
@@ -1266,8 +1494,16 @@
                     submitPickup,
                     openReturnDialog,
                     submitReturnConfirm,
+                    faultList,
+                    refreshFaults,
+                    openFaultResolveDialog,
+                    submitFaultResolve,
                     openEditStatusDialog,
-                    submitStatusChange
+                    submitStatusChange,
+                    availableStockVehicles,
+                    getCustomerPhone,
+                    getVehiclePlate,
+                    getOrderVehiclePlate
                 };
             }
         });

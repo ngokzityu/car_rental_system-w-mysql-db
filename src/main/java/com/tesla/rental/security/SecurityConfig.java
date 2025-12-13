@@ -52,6 +52,8 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 允许直接访问站点根路径 (Spring Boot 默认会在 "/" 映射到 static/index.html)
+                        .requestMatchers("/", "/error", "/favicon.ico").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/index.html", "/customer.html", "/images/**", "/js/**", "/css/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()
@@ -59,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/vehicles/**", "/api/models/**", "/api/stores/**").permitAll()
                         .requestMatchers("/api/customers/**", "/api/orders/**").permitAll()
                         .requestMatchers("/api/payments/**", "/api/violations/**", "/api/maintenance/**").permitAll()
+                        .requestMatchers("/api/faults/**").permitAll()
                         .anyRequest().authenticated());
 
         http.authenticationProvider(authenticationProvider());
