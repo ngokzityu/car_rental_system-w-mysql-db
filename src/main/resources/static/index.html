@@ -344,6 +344,8 @@
         .action-buttons {
             margin-bottom: 24px;
             display: flex;
+            flex-wrap: wrap;
+            align-items: center;
             gap: 16px;
         }
 
@@ -408,8 +410,13 @@
                     <el-button type="primary" @click="openVehicleDialog">添加车辆</el-button>
                     <el-button type="success" @click="generateVehicles">生成10辆随机车</el-button>
                     <el-button @click="refreshVehicles">刷新</el-button>
+                    <el-select v-model="vehicleStatusFilter" placeholder="全部状态" style="width: 160px;">
+                        <el-option label="全部状态" value=""></el-option>
+                        <el-option v-for="status in vehicleStatusOptions" :key="status" :label="status"
+                            :value="status"></el-option>
+                    </el-select>
                 </div>
-                <el-table :data="vehicleList" style="width: 100%" v-loading="loading.vehicles">
+                <el-table :data="filteredVehicleList" style="width: 100%" v-loading="loading.vehicles">
                     <el-table-column prop="vehicleId" label="ID" width="60"></el-table-column>
                     <el-table-column prop="carModelName" label="车型"></el-table-column>
                     <el-table-column prop="plateNo" label="车牌号"></el-table-column>
@@ -834,9 +841,30 @@
 
                 // 模拟数据
                 const vehicleList = ref([
-                    { id: 1, model: 'Model 3', plateNo: '京A 88888', dailyPrice: 150, status: 1 },
-                    { id: 2, model: 'Model Y', plateNo: '沪B 66666', dailyPrice: 180, status: 0 },
-                    { id: 3, model: 'Model S', plateNo: '粤Z 99999', dailyPrice: 250, status: 1 }
+                    {
+                        vehicleId: 1001,
+                        carModelName: 'Model 3 后驱',
+                        plateNo: '京A 88888',
+                        currentSoc: 85,
+                        currentMileage: 12000,
+                        status: '在库'
+                    },
+                    {
+                        vehicleId: 1002,
+                        carModelName: 'Model Y 长续航',
+                        plateNo: '沪B 66666',
+                        currentSoc: 62,
+                        currentMileage: 18000,
+                        status: '在租'
+                    },
+                    {
+                        vehicleId: 1003,
+                        carModelName: 'Model S Plaid',
+                        plateNo: '粤Z 99999',
+                        currentSoc: 40,
+                        currentMileage: 25000,
+                        status: '维保'
+                    }
                 ]);
                 const customerList = ref([]);
                 const orderList = ref([]);
@@ -846,12 +874,20 @@
                 const violationList = ref([]);
                 const maintenanceList = ref([]);
                 const carModels = ref([]);
+                const vehicleStatusFilter = ref('');
+                const vehicleStatusOptions = ['在租', '在库', '维保'];
 
                 const vehicleStats = computed(() => ({
                     available: vehicleList.value.filter(v => v.status === '在库').length,
                     rented: vehicleList.value.filter(v => v.status === '在租').length,
                     total: vehicleList.value.length
                 }));
+                const filteredVehicleList = computed(() => {
+                    if (!vehicleStatusFilter.value) {
+                        return vehicleList.value;
+                    }
+                    return vehicleList.value.filter(v => v.status === vehicleStatusFilter.value);
+                });
 
                 const availableStockVehicles = computed(() =>
                     vehicleList.value.filter(v => v.status === '在库'));
@@ -1471,6 +1507,9 @@
                     currentTab,
                     loading,
                     vehicleList,
+                    vehicleStatusFilter,
+                    vehicleStatusOptions,
+                    filteredVehicleList,
                     customerList,
                     orderList,
                     vehicleStats,
